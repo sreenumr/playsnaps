@@ -2,6 +2,7 @@ import os
 import discord
 from dotenv import load_dotenv
 from discord.ext import commands
+from Crossword import Crossword
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -49,6 +50,7 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
 
 
+
 # @bot.event
 # async def on_message(message):
 #     if message.author == bot.user:
@@ -65,5 +67,6 @@ async def play(ctx):
 
     await ctx.send(' '.join(alphabet_emojis.values()))
 
-generate_crossword()
+crossword = Crossword()
+crossword.generate_crossword()
 # bot.run(TOKEN)
