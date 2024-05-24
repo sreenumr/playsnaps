@@ -99,13 +99,14 @@ class Crossword:
         pass
 
     def place_word(self,word,x,y,direction) -> bool:
-            logging.info(f"Placing word {word} at {x} , {y} {direction}ly")
             if(direction == HORIZONTAL):
+                logging.info(f"Placing word {word} at {x} , {y} {direction}ly")
                 for i, letter in enumerate(word):
                     self.grid[x][y + i] = letter
             else:
+                logging.info(f"Placing word {word} at {x} , {y} {direction}ly")
                 for i, letter in enumerate(word):
-                    self.grid[x + i][y]
+                    self.grid[x + i][y] = letter
 
 
     def generate_crossword(self) -> bool:
@@ -114,9 +115,9 @@ class Crossword:
         self.initialise_crossword()
         
         for word in word_list:
-            direction = random.choice(DIRECTION)
             tries = 0
             while(tries < 100): 
+                direction = random.choice(DIRECTION)
                 x,y = random.sample(list(range(self.grid_size)),k=2)   
                 if(self.check_place_word(word,x,y,direction)):            
                     self.place_word(word,x,y,direction)
