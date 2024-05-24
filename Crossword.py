@@ -42,8 +42,7 @@ class Crossword:
     
     def check_place_word(self,word : str, x : int, y : int , direction : str) -> bool:
         word_len = len(word)
-        #if word before
-            #return False
+
         #if word after
             #return False
         #if word overlapping 
@@ -51,17 +50,49 @@ class Crossword:
                 #return True
             #if overlapping is not ok
                 #return False
+
         #if word out of bound
-            #return False
+            #return False --> Done
+        #if word before
+            #return False --> Done
+        #if word after
+            #return False --> Done
         if(direction == HORIZONTAL):
             if(y + word_len > self.grid_size):
                 logging.error(f"Error!, Can't place {word} at {x}, {y} {direction}ly")
                 return False
-        else:
+            if(x-1 >=0):#if word exists before
+                for i in range(word_len):
+                    if(self.grid[x-1][y+i] == "-"):
+                        continue
+                    else:
+                        logging.error(f"Word exists before!, Can't place {word} at {x}, {y} {direction}ly")
+                        return False
+            if(x + 1 < self.grid_size):
+                for i in range(word_len):
+                    if(self.grid[x+1][y+i] == "-"):
+                        continue
+                    else:
+                        logging.error(f"Word exists after!, Can't place {word} at {x}, {y} {direction}ly")
+                        return False
+        else:#VERTICAL
             if(x + word_len > self.grid_size):
                 logging.error(f"Error!, Can't place {word} at {x}, {y} {direction}ly")
                 return False
-        
+            if(y-1 >= 0):#if word exists before
+                for i in range(word_len):
+                    if(self.grid[x+i][y-1] == "-"):
+                        continue
+                    else:
+                        logging.error(f"Word exists before!, Can't place {word} at {x}, {y} {direction}ly")
+                        return False
+            if(y + 1 < self.grid_size):
+                for i in range(word_len):
+                    if(self.grid[x+i][y+1] == "-"):
+                        continue
+                    else:
+                        logging.error(f"Word exists after!, Can't place {word} at {x}, {y} {direction}ly")
+                        return False
         return True
     
     def find_common(self,word : str) -> None:
