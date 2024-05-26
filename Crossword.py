@@ -1,133 +1,160 @@
 import random
-import numpy as np
-import logging
 
-logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(levelname)s - %(message)s')
-
-HORIZONTAL = "horizontal"
-VERTICAL = "vertical"
-DIRECTION = [HORIZONTAL, VERTICAL]
+HORIZONTAL = 'H'
+VERTICAL = 'V'
+EMPTY = '-'
 
 class Crossword:
-    def __init__(self) -> None:
-        self.grid_size = 0
-        self.grid = [[]]
+    def __init__(self, width, height, words):
+        self.width = width
+        self.height = height
+        self.words = words
+        self.grid = [[EMPTY] * width for _ in range(height)]
+        self.randomizer = random.Random()
         self.placed_words = []
-        is_crossword_empty = True
 
-    def is_crossword_empty(self) -> bool:
-        for row in self.grid:
-            for element in row:
-                if(element == "-"):
-                    continue
-                else:
-                    self.is_crossword_empty = False
+    def _randomize_word_list(self):
+        self.randomizer.shuffle(self.words)
+
+    def _find_all_positions_for_word(self, word):
+        positions = []
+        length = len(word)
+
+        # Try to find positions for horizontal placement
+        for y in range(self.height):
+            for x in range(self.width - length + 1):
+                if all(self.grid[y][x + i] in (EMPTY, word[i]) for i in range(length)):
+                    if self._check_no_adjacent(y, x, length, HORIZONTAL):
+                        positions.append((x, y, HORIZONTAL))
+
+        # Try to find positions for vertical placement
+        for y in range(self.height - length + 1):
+            for x in range(self.width):
+                if all(self.grid[y + i][x] in (EMPTY, word[i]) for i in range(length)):
+                    if self._check_no_adjacent(y, x, length, VERTICAL):
+                        positions.append((x, y, VERTICAL))
+
+        return positions
+
+    def _check_no_adjacent(self, y, x, length, direction):
+        if direction == HORIZONTAL:
+            # Check left and right of the word
+            if x > 0 and self.grid[y][x - 1] != EMPTY:
+                return False
+            if x + length < self.width and self.grid[y][x + length] != EMPTY:
+                return False
+            # Check above and below each character
+            for i in range(length):
+                if y > 0 and self.grid[y - 1][x + i] != EMPTY:
                     return False
-        
-        return True
-    
-    def get_word_list(self) -> list:
-        word_list = ['apple','banana','orange','grape','pineapple','pomegranate']
-        return word_list   
+                if y < self.height - 1 and self.grid[y + 1][x + i] != EMPTY:
+                    return False
+            # Ensure a row space above and below
+            if y > 1:
+                for i in range(length):
+                    if self.grid[y - 2][x + i] != EMPTY:
+                        return False
+            if y < self.height - 2:
+                for i in range(length):
+                    if self.grid[y + 2][x + i] != EMPTY:
+                        return False
+            return True
+        else:
+            # Check above and below the word
+            if y > 0 and self.grid[y - 1][x] != EMPTY:
+                return False
+            if y + length < self.height and self.grid[y + length][x] != EMPTY:
+                return False
+            # Check left and right of each character
+            for i in range(length):
+                if x > 0 and self.grid[y + i][x - 1] != EMPTY:
+                    return False
+                if x < self.width - 1 and self.grid[y + i][x + 1] != EMPTY:
+                    return False
+            # Ensure a column space left and right
+            if x > 1:
+                for i in range(length):
+                    if self.grid[y + i][x - 2] != EMPTY:
+                        return False
+            if x < self.width - 2:
+                for i in range(length):
+                    if self.grid[y + i][x + 2] != EMPTY:
+                        return False
+            return True
 
-    def set_grid_size(self,size) -> int:
-        self.grid_size = size
-
-    def initialise_crossword(self) -> bool:
-        self.grid = [['-'] * self.grid_size for _ in range(self.grid_size)]
-        return True
-
-    def word_present(self, x : int , y : int) -> bool:
-        return True
-    
-    def check_place_word(self,word : str, x : int, y : int , direction : str) -> bool:
+    def _find_intersections(self, word):
+        intersections = []
         word_len = len(word)
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.grid[y][x] in word:
+                    for i in range(word_len):
+                        if self.grid[y][x] == word[i]:
+                            start_col = x - i
+                            start_row = y - i
+                            if self._check_intersection_validity(word, x, y, HORIZONTAL, start_col):
+                                intersections.append((start_col, y, HORIZONTAL))
+                            if self._check_intersection_validity(word, x, y, VERTICAL, start_row):
+                                intersections.append((x, start_row, VERTICAL))
+        return intersections
 
-        #if word after
-            #return False
-        #if word overlapping 
-            #if overlapping is ok
-                #return True
-            #if overlapping is not ok
-                #return False
-
-        #if word out of bound
-            #return False --> Done
-        #if word before
-            #return False --> Done
-        #if word after
-            #return False --> Done
-        if(direction == HORIZONTAL):
-            if(y + word_len > self.grid_size):
-                logging.error(f"Error!, Can't place {word} at {x}, {y} {direction}ly")
+    def _check_intersection_validity(self, word, x, y, direction, start):
+        length = len(word)
+        if direction == HORIZONTAL:
+            if start < 0 or start + length > self.width:
                 return False
-            if(x-1 >=0):#if word exists before
-                for i in range(word_len):
-                    if(self.grid[x-1][y+i] == "-"):
-                        continue
-                    else:
-                        logging.error(f"Word exists before!, Can't place {word} at {x}, {y} {direction}ly")
-                        return False
-            if(x + 1 < self.grid_size):
-                for i in range(word_len):
-                    if(self.grid[x+1][y+i] == "-"):
-                        continue
-                    else:
-                        logging.error(f"Word exists after!, Can't place {word} at {x}, {y} {direction}ly")
-                        return False
-        else:#VERTICAL
-            if(x + word_len > self.grid_size):
-                logging.error(f"Error!, Can't place {word} at {x}, {y} {direction}ly")
+            if all(self.grid[y][start + i] in (EMPTY, word[i]) for i in range(length)):
+                return True
+        elif direction == VERTICAL:
+            if start < 0 or start + length > self.height:
                 return False
-            if(y-1 >= 0):#if word exists before
-                for i in range(word_len):
-                    if(self.grid[x+i][y-1] == "-"):
-                        continue
-                    else:
-                        logging.error(f"Word exists before!, Can't place {word} at {x}, {y} {direction}ly")
-                        return False
-            if(y + 1 < self.grid_size):
-                for i in range(word_len):
-                    if(self.grid[x+i][y+1] == "-"):
-                        continue
-                    else:
-                        logging.error(f"Word exists after!, Can't place {word} at {x}, {y} {direction}ly")
-                        return False
-        return True
-    
-    def find_common(self,word : str) -> None:
-        pass
+            if all(self.grid[start + i][x] in (EMPTY, word[i]) for i in range(length)):
+                return True
+        return False
 
-    def place_word(self,word,x,y,direction) -> bool:
-            if(direction == HORIZONTAL):
-                logging.info(f"Placing word {word} at {x} , {y} {direction}ly")
-                for i, letter in enumerate(word):
-                    self.grid[x][y + i] = letter
+    def _place_word(self, word, position):
+        x, y, direction = position
+
+        if direction == HORIZONTAL:
+            for i, char in enumerate(word):
+                self.grid[y][x + i] = char
+        else:
+            for i, char in enumerate(word):
+                self.grid[y + i][x] = char
+
+        self.placed_words.append(word)
+
+    def generate(self):
+        self._randomize_word_list()
+        for word in self.words:
+            intersections = self._find_intersections(word)
+            positions = self._find_all_positions_for_word(word)
+            all_positions = intersections + positions
+            if all_positions:
+                all_positions = sorted(all_positions, key=lambda pos: self._count_intersections(word, pos), reverse=True)
+                position = all_positions[0]
+                self._place_word(word, position)
             else:
-                logging.info(f"Placing word {word} at {x} , {y} {direction}ly")
-                for i, letter in enumerate(word):
-                    self.grid[x + i][y] = letter
+                print(f"Could not place the word: {word}")
 
+    def _count_intersections(self, word, position):
+        x, y, direction = position
+        count = 0
+        for i, char in enumerate(word):
+            if direction == HORIZONTAL:
+                if self.grid[y][x + i] == char:
+                    count += 1
+            else:
+                if self.grid[y + i][x] == char:
+                    count += 1
+        return count
 
-    def generate_crossword(self) -> bool:
-        word_list = self.get_word_list()
-        self.set_grid_size(len(max(word_list, key=len)))
-        self.initialise_crossword()
-        
-        for word in word_list:
-            tries = 0
-            while(tries < 100): 
-                direction = random.choice(DIRECTION)
-                x,y = random.sample(list(range(self.grid_size)),k=2)   
-                if(self.check_place_word(word,x,y,direction)):            
-                    self.place_word(word,x,y,direction)
-                    break
-                else:
-                    tries +=1
+    def display(self):
+        for row in self.grid:
+            print(' '.join(row))
 
 if __name__ == "__main__":
-    crossword = Crossword()
-    print(np.matrix(crossword.grid))
-    crossword.generate_crossword()
-    print(np.matrix(crossword.grid))
-    
+    word_list = ['apple', 'banana', 'orange', 'grape', 'pineapple', 'pomegranate']
+    crossword = Crossword(15, 15, word_list)
+    crossword.generate()
+    crossword.display()

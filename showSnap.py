@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from Crossword import Crossword
 import numpy as np
+import pandas as pd
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -68,9 +69,9 @@ async def play(ctx):
 
     await ctx.send(' '.join(alphabet_emojis.values()))
 
-crossword = Crossword()
-print(np.matrix(crossword.grid))
+word_list = ['apple', 'banana']
+crossword = Crossword(word_list)
 crossword.generate_crossword()
-print(np.matrix(crossword.grid))
+print(pd.DataFrame(crossword.grid))
 
 # bot.run(TOKEN)
